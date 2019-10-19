@@ -19,20 +19,31 @@ public class PlayerControls : MonoBehaviour {
 	private float xPos = -4.0f;
 	public static SerialPort stream = new SerialPort("/dev/cu.usbmodem14101", 9600);
 	public string userinput;
+	private Thread streamReaderThread;
 
 
 	// Use this for initialization
 	void Start () {
 		stream.Open();
 		stream.ReadTimeout = 15;
+		streamReaderThread = new Thread(new ThreadStart(ReadInput));
+		streamReaderThread.IsBackground = true;
+		streamReaderThread.Start();
+	}
+
+	void ReadInput() {
+		while(true) {
+			try {
+				userinput = stream.ReadLine();
+				stream.BaseStream.Flush();
+			} catch (TimeoutException e) {
+				
+			}
+		}
 	}
 	
 	// Update is called once per frame
 	void Update () {
-		try {
-			while(stream.BytesToRead > 0) {
-				userinput = stream.ReadLine();
-			}
 			float pos;
 			float.TryParse (userinput, out angle);
 			if (angle >= 0) {
@@ -41,9 +52,5 @@ public class PlayerControls : MonoBehaviour {
 				pos = -(angle / minAngle) * minPos ;
 			}
 			transform.position = new Vector3(xPos, Mathf.Clamp(pos,minPos,maxPos), 0.0f); 
-			stream.BaseStream.Flush();
-		} catch (TimeoutException e) {
-			return;
-		}
 	}
 }
