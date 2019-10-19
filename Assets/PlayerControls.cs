@@ -24,20 +24,26 @@ public class PlayerControls : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
 		stream.Open();
+		stream.ReadTimeout = 15;
 	}
 	
 	// Update is called once per frame
 	void Update () {
-		userinput = stream.ReadLine();
-		float pos;
-		float.TryParse (userinput, out angle);
-		Debug.Log (angle);
-		if (angle >= 0) {
-			pos = -(angle / maxAngle) * maxPos ;
-		} else {
-			pos = -(angle / minAngle) * minPos ;
+		try {
+			while(stream.BytesToRead > 0) {
+				userinput = stream.ReadLine();
+			}
+			float pos;
+			float.TryParse (userinput, out angle);
+			if (angle >= 0) {
+				pos = -(angle / maxAngle) * maxPos ;
+			} else {
+				pos = -(angle / minAngle) * minPos ;
+			}
+			transform.position = new Vector3(xPos, Mathf.Clamp(pos,minPos,maxPos), 0.0f); 
+			stream.BaseStream.Flush();
+		} catch (TimeoutException e) {
+			return;
 		}
-		transform.position = new Vector3(xPos, Mathf.Clamp(pos,minPos,maxPos), 0.0f); 
-		stream.BaseStream.Flush();
 	}
 }
